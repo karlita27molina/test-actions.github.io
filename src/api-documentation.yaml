@@ -35,7 +35,7 @@
     version: '1.0'
     contact:
       name: API Support
-      email: email@example.com
+      email: fabricio@example.com
       url: https://github.com/corporacion-wolf/invoicing-backend-server
     x-logo:
       url: 'https://res.cloudinary.com/img-cloud-alex/image/upload/v1682703792/ctch8cd8eblbcn2ih7zx.png'
