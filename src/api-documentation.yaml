@@ -1,0 +1,1382 @@
+---
+  openapi: 3.0.0
+  servers:
+    - url: http://localhost:3000
+      description: Local Server
+  info:
+    title: Documentación de APIs de Facturación Electrónica
+    description: |
+      # Introducción
+      Integra tu aplicación con Facturación Electrónica utilizando la API
+      de Wolf Invoicing, podrás generar diversos tipos de comprobantes electrónicos:
+        - Facturas
+        - Retenciones
+        - Notas de Crédito
+        - Notas de Débito
+        - Guías de Remisión     
+  
+      Estos presentados como un servicio REST API, lo que facilita la comunicación con nuestra interfaz utilizando
+      cualquier librería compatible con cliente HTTP. Utilizamos componentes estándar, como los verbos HTTP y los códigos de respuesta,
+      lo que simplifica la implementación.
+  
+      # Autenticación
+      Wolf Invoincing ofrece dos maneras de autenticación:
+        - API Key
+        - Cookie Auth con JWT
+  
+      Cookie Auth - un protocolo abierto para permitir la autorización segura en un método simple y estándar desde aplicaciones web, móviles y de escritorio.
+  
+      JWT - el uso de JWT en OAuth brinda varias ventajas, como la portabilidad y la capacidad de transmitir información adicional en el token mismo.
+      Además, al ser autocontenido y firmado digitalmente, el JWT proporciona una forma segura de transmitir información de manera confiable entre 
+      las partes involucradas en el proceso de autenticación y autorización.
+  
+      <SecurityDefinitions />
+  
+    version: '1.0'
+    contact:
+      name: API Support
+      email: email@example.com
+      url: https://github.com/corporacion-wolf/invoicing-backend-server
+    x-logo:
+      url: 'https://res.cloudinary.com/img-cloud-alex/image/upload/v1682703792/ctch8cd8eblbcn2ih7zx.png'
+      altText: Wolf Invoice Logo
+  tags:
+    - name: Generar
+      description: Permite generar los diversos documentos que el SRI emite, siempre y cuando se cumplan los requisitos establecidos en el cuerpo de la solicitud en formato JSON
+    - name: Documentos
+      description: Permite consultar y descargar los diversos documentos previamente generados junto con su correspondiente información, considerando los requisitos establecidos en el cuerpo de la solicitud
+    - name: Auth 
+      description: Módulo de Autenticación y Autorización para el uso de las APIs y control de roles
+  x-tagGroups:
+    - name: Auth
+      tags: 
+        - Auth
+    - name: Comprobantes
+      tags:
+        - Generar
+        - Documentos
+  paths:
+    /auth/login:   
+      post:
+        operationId: login
+        summary: 'Login'
+        description: Permite el Inicio de Sesión para obtener su autenticación
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                properties:
+                  email:
+                    type: string
+                    example: email@example.com
+                  password:
+                    type: string
+                    example: password
+        responses:
+          '200':
+            description: Ok
+            headers: 
+              Set-Cookie:
+                schema: 
+                  type: string
+          '401':
+            description: 'Correo electrónico o contraseña incorrectos'
+          '403':
+            description: No Autorizado - ApiKey no válida
+        tags:
+          - Auth
+    /invoices:
+      post:
+        operationId: Factura
+        summary: 'Factura'
+        description:
+          Para generar una factura, es necesario enviar toda la información
+          del comprobante en el cuerpo de la solicitud en formato JSON
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'write:invoices'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/CreateInvoiceDto'
+        responses:
+          '200':
+            description: Petición Exitosa
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient200'
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Generar
+    /waybills:
+      post:
+        operationId: GuiaRemision
+        summary: 'Guía de Remisión'
+        description:
+          Para generar una Guía de Remisión, es necesario enviar toda la
+          información del comprobante en el cuerpo de la solicitud en formato JSON
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'write:waybills'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/CreateWaybillDto'
+        responses:
+          '200':
+            description: Petición Exitosa
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient200'
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Generar
+    /retentions:
+      post:
+        operationId: ComprobanteRetencion
+        summary: 'Comprobante de Retención'
+        description:
+          Para generar un Comprobante de Retención, es necesario enviar toda la información
+          del comprobante en el cuerpo de la solicitud en formato JSON
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'write:retentions'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/CreateRetentionDto'
+        responses:
+          '200':
+            description: Petición Exitosa
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient200'
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Generar
+    /debitNotes:
+      post:
+        operationId: NotaDebito
+        summary: 'Nota de Débito'
+        description:
+          Para generar una Nota de Débito, es necesario enviar toda la información
+          del comprobante en el cuerpo de la solicitud en formato JSON
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'write:debitNotes'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/CreateDebitNoteDto'
+        responses:
+          '200':
+            description: Petición Exitosa
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient200'
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Generar
+    /creditNotes:
+      post:
+        operationId: NotaCredito
+        summary: 'Nota de Crédito'
+        description:
+          Para generar una Nota de Crédito, es necesario enviar toda la información
+          del comprobante en el cuerpo de la solicitud en formato JSON
+        parameters:
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'write:creditNotes'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                '$ref': '#/components/schemas/CreateCreditNoteDto'
+        responses:
+          '200':
+            description: Petición Exitosa
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient200'
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Generar
+    /documents/{businessId}:
+      get:
+        operationId: ConsultarDocumentos
+        summary: 'Consultar Documentos'
+        description:
+          Se puede consultar información completa de cualquier comprobante
+          mediante la utilización de múltiples criterios o parámetros de búsqueda definidos.
+        parameters:
+          - name: businessId
+            required: true
+            in: path
+            schema:
+              type: number
+          - name: afterThat
+            required: false
+            in: query
+            schema:
+              type: number
+          - name: branchId
+            required: false
+            in: query
+            description: Se define el Id de la Sucursal a consultar
+            example: '1'
+            schema:
+              type: number
+          - name: ptoEmi
+            required: false
+            in: query
+            description: Se define el Punto de Emisión de la Sucursal a consultar
+            example: '027'
+            schema:
+              minLength: 3
+              maxLength: 3
+              type: string
+          - name: codDoc
+            required: false
+            in: query
+            description: Se define el Código del Documento según el SRI
+            example: '01'
+            schema:
+              minLength: 2
+              maxLength: 2
+              type: string
+          - name: environment
+            required: false
+            in: query
+            description:
+              "Se define el ambiente en el cual se va a realizar la emisión
+              del Documento.\n  - **1**: PRUEBAS \n  - **2**: PRODUCCIÓN"
+            example: '1'
+            schema:
+              minLength: 1
+              maxLength: 1
+              type: string
+          - name: dateBefore
+            required: false
+            in: query
+            description: Se define la fecha hasta la que quiere consultar
+            example: '2023-06-01'
+            schema:
+              format: YYYY-MM-DD
+              type: string
+          - name: dateAfter
+            required: false
+            in: query
+            description: Se define la fecha desde la que quiere consultar
+            example: '2023-06-20'
+            schema:
+              format: YYYY-MM-DD
+              type: string
+          - name: state
+            required: false
+            in: query
+            description:
+              "Se define el estado de los documentos a buscar\n  - **in_process**:
+              En Proceso\n  - **authorized**: Autorizado\n  - **received**: Recibido\n
+              \ - **rejected**: Rechazado\n  - **not_authorized**: No Autorizado\n    "
+            schema:
+              enum:
+                - in_process
+                - rejected
+                - authorized
+                - not_authorized
+                - received
+              type: string
+          - name: limit
+            required: false
+            in: query
+            example: 20
+            description: Se define el número máximo de registros a retornar
+            schema:
+              minLength: 1
+              type: number
+          - name: offset
+            required: false
+            in: query
+            example: 1
+            description: Se define el número del primer registro a retornar
+            schema:
+              minLength: 0
+              default: 0
+              type: number
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+              - 'read:documents'
+        responses:
+          '200':
+            description: Retorna toda la información del documento basada en los parametros de búsqueda 
+          '400':
+            description: Respuestas con mensajes múltiples
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient400'
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Documentos
+    /documents/ride/{code}:
+      get:
+        operationId: DescargarRide
+        summary: 'Descargar Documento Ride'
+        description:
+          Se puede descargar el PDF del Ride que se generó con la información
+          completa de cualquier comprobante autorizado
+        parameters:
+          - name: code
+            required: true
+            in: path
+            description: Código del documento
+            schema:
+              type: string
+            example: E8Q35KBYEL964GOV
+        security:
+          []
+        responses:
+          '200':
+            description: Retorna el PDF del RIDE consultada
+          '404':
+            description: Entrada no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient404'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Documentos
+    /documents/report/{businessId}:
+      post:
+        operationId: GenerarReporte
+        summary: 'Reporte de Facturas'
+        description: |
+          Se genera el EXCEL con la información completa de cualquier comprobante. 
+          
+          **Nota**: Funcionalidad disponible solo para facturas documentCode: 01
+        parameters:
+          - name: businessId
+            required: true
+            in: path
+            schema:
+              type: number
+          - name: Authorization
+            in: header
+            required: true
+            schema:
+              type: string
+            example: 'ABC1234'
+        security:
+          - CookieAuth:
+            - 'write:reports'
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ReportDto"
+        responses:
+          '200':
+            description: Correo enviado exitosamente
+          '401':
+            description: No ha iniciado sesión
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient401'
+          '403':
+            description: ApiKey no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient403'
+          '404':
+            description: Entrada no válida, Código de Documento no válido
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient404'
+        tags:
+        - Generar
+    /reports/{code}:
+      get:
+        operationId: DescargarReporte
+        summary: 'Descargar Reporte de Facturas'
+        description:
+          Se puede descargar el EXCEL que se generó con la información completa de cualquier comprobante
+        parameters:
+          - name: code
+            required: true
+            in: path
+            description: Código del reporte
+            schema:
+              type: string
+            example: E8Q35KBYEL964GOV
+        security:
+          []
+        responses:
+          '200':
+            description: Retorna el Reporte en formato xlxs  
+          '404':
+            description: Entrada no válida
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient404'
+          '500':
+            description: Fallo en el servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResponseClient500'
+        tags:
+          - Documentos
+  components:
+    schemas:
+      ResponseClient200:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 200
+          data:
+            type: string
+            example: '1505202305171000238500110010010000000015330148218'
+          message:
+            type: string
+            example: 'OK'
+      ResponseClient403:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 403
+          message:
+            type: string
+            example: 'No Autorizado'
+      ResponseClient401:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 401
+          message:
+            type: string
+            example: 'Unauthorized'
+      ResponseClient500:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 500
+          message:
+            type: string
+            example: 'Internal Server Error'
+      ResponseClient400:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 400
+          message:
+            type: string
+            example: 'Hubo un error inténtalo de nuevo'
+      ResponseClient404:
+        type: object
+        properties:
+          statusCode:
+            type: number
+            example: 404
+          message:
+            type: string
+            example: 'No existe un Ride con ese identificador'
+      CreateBusinessAdminDto:
+        type: object
+        properties:
+          email:
+            type: string
+          password:
+            type: string
+          dni:
+            type: string
+            description: La cédula debe contener solo números
+            maxLength: 10
+          firstName:
+            type: string
+          secondName:
+            type: string
+          firstLastName:
+            type: string
+          secondLastName:
+            type: string
+          logo:
+            type: string
+          avatar:
+            type: string
+          phoneNumber:
+            type: string
+          ptoEmi:
+            type: string
+          establishment:
+            type: string
+          specialCollaborator:
+            type: string
+          obligateAccountant:
+            type: boolean
+            default: false
+          province:
+            type: string
+          city:
+            type: string
+          emailBusiness:
+            type: string
+          address:
+            type: string
+          ruc:
+            type: string
+          companyName:
+            type: string
+          tradeName:
+            type: string
+        required:
+          - password
+          - dni
+          - firstName
+          - firstLastName
+          - phoneNumber
+          - ptoEmi
+          - establishment
+          - province
+          - city
+          - emailBusiness
+          - address
+          - ruc
+          - companyName
+          - tradeName
+      MoreInformationDto:
+        type: object
+        properties:
+          name:
+            type: string
+            example: Nombre
+          value:
+            type: string
+            example: Juan Pérez
+        required:
+          - name
+          - value
+      CreateDocumentDto:
+        type: object
+        properties:
+          environment:
+            type: string
+            description:
+              "Se define el ambiente en el cual se va a realizar la emisión
+              del Documento.\n  - **1**: PRUEBAS \n  - **2**: PRODUCCIÓN"
+            example: '1'
+            minLength: 1
+            maxLength: 1
+          sequential:
+            type: number
+            description: Se define el secuencial del número de comprobante.
+            example: '000000017'
+            minLength: 9
+            maxLength: 9
+          typeEmission:
+            type: string
+            description: Se define el Tipo de Emisión del Documento.
+            example: '1'
+            minLength: 1
+            maxLength: 1
+          dateEmission:
+            format: YYYY-MM-DD
+            type: string
+            description: Se define la fecha en el que se crea el Documento.
+            example: '2023-05-15'
+          moreInformation:
+            description: Información Adicional del Documento.
+            allOf:
+              - '$ref': '#/components/schemas/MoreInformationDto'
+          ptoEmi:
+            type: string
+            description: Punto de Emision.
+            example: '001'
+            minLength: 3
+            maxLength: 3
+          establishment:
+            type: string
+            description: Código de Establecimiento.
+            example: '002'
+            minLength: 3
+            maxLength: 3
+          branchId:
+            type: number
+            description: Se define la Sucursal que crea el documento mediante su id.
+            example: '2'
+          customerId:
+            type: number
+            description: Se define el Cliente del documento mediante su id.
+            example: '1'
+        required:
+          - environment
+          - typeEmission
+          - dateEmission
+          - moreInformation
+          - ptoEmi
+          - establishment
+          - branchId
+          - customerId
+      InvoiceDto:
+        type: object
+        properties:
+          waybillId:
+            type: number
+            description:
+              Se define el número de una Guía de Remisión en caso de que
+              este ligada a la Factura.
+            example: 001-001-000000001
+            minLength: 15
+            maxLength: 15
+          currency:
+            type: string
+            description: Se define la moneda de facturación, puede ser opcional
+            example: USD
+          ivaValue:
+            type: number
+            description: Valor de impuesto IVA de la factura
+            example: ''
+          rentValue:
+            type: number
+            description: Valor de Retención de la factura
+          tip:
+            type: number
+            description: Se define el valor de la propina que el cliente quiere dar
+            example: '0'
+          totalDiscount:
+            type: number
+            description: Valor total del Descuento que existe en la Factura
+            example: '0'
+          amount:
+            type: number
+            description: Valor total a pagar de la Factura
+            example: '190.38'
+          totalWithoutDiscount:
+            type: number
+            description: Valor total sin aplicar impuestos de la Factura
+            example: '175.55'
+        required:
+          - currency
+          - tip
+          - totalDiscount
+          - amount
+          - totalWithoutDiscount
+      CreatePaymentDto:
+        type: object
+        properties:
+          total:
+            type: number
+            description: Se define el valor que pagará el cliente.
+            example: '31.73'
+          paymentForm:
+            type: string
+            description: |-
+              Se define mediante el código, el método pago que realizara el cliente.
+                - **01**: Sin Utilización del Sistema Financiero
+                - **15**: Compensación de Deudas
+                - **16**: Tarjeta de Débito
+                - **17**: Dinero Electrónico
+                - **18**: Tarjeta Prepago
+                - **19**: Tarjeta de Crédito
+                - **20**: Otros con Utilización del Sistema Financiero
+                - **21**: Endoso de Títulos
+            example: '19'
+            minLength: 2
+            maxLength: 2
+          timeUnit:
+            type: string
+            description:
+              Se define la unidad de tiempo que seran los plazos de pago
+              por parte del cliente.
+            example: plazos
+          term:
+            type: number
+            description: Se define los plazos de pago por parte del cliente.
+            example: '6'
+        required:
+          - total
+          - paymentForm
+      CreateTaxInvoiceDto:
+        type: object
+        properties:
+          code:
+            type: string
+            description:
+              "Se define el tipo de impuesto.\n  - **2**: IVA \n  - **3**:
+              ICE\n  - **5**: IRBPNR"
+            example: '2'
+            minLength: 1
+            maxLength: 1
+          additionalDiscount:
+            type: number
+            description: Descuento adicional aplicarse al Impuesto
+            example: '0'
+          percentCode:
+            type: number
+            description: Se define el porcentaje del Impuesto mediante el SRI
+            example: '2'
+          taxBases:
+            type: number
+            description: Valor aplicarse el Impuesto
+            example: '169.99'
+          value:
+            type: number
+            description: Valor del Impuesto
+            example: '20.39'
+        required:
+          - code
+          - taxBases
+          - value
+      MoreDetailsDto:
+        type: object
+        properties:
+          name:
+            type: string
+            example: Marca
+          value:
+            type: string
+            example: Sony
+        required:
+          - name
+          - value
+      CreateTaxDto:
+        type: object
+        properties:
+          code:
+            type: string
+            description:
+              "Se define el tipo de Impuesto.\n  - **2**: IVA \n  - **3**:
+              ICE\n  - **5**: IRBPNR"
+            example: '2'
+            minLength: 1
+            maxLength: 1
+          percentCode:
+            type: string
+            description: Se define el porcentaje del Impuesto mediante el SRI
+            example: '2'
+          rate:
+            type: string
+            description: Tarifa del Impuesto aplicarse
+            example: '12'
+          taxBases:
+            type: number
+            description: Valor aplicarse el Impuesto
+            example: '169.99'
+          value:
+            type: number
+            description: Valor del Impuesto
+            example: '20.39'
+        required:
+          - code
+          - percentCode
+          - taxBases
+          - value
+      CreateDetailDto:
+        type: object
+        properties:
+          code:
+            type: string
+            description: Código del producto
+            example: WF-LS900N
+          auxiliaryCode:
+            type: string
+            description: Código auxiliar del producto
+            example: WF-LS900N/WCUC
+          description:
+            type: string
+            description: Descripción del producto
+            example: Audífonos inalámbricos con cancelación de ruido LinkBuds
+          quantity:
+            type: number
+            description: Cantidad del producto
+            example: '1'
+          productId:
+            type: number
+            description: ID del producto
+            example: '5'
+          totalPrice:
+            type: number
+            description: Precio total a pagar
+            example: '169.99'
+          discount:
+            type: number
+            description: Descuento que puede o no tener el producto
+            example: '0.00'
+          unitPrice:
+            type: number
+            description: Precio por unidad del producto
+            example: '169.99'
+          unitMeasure:
+            type: string
+            description: Unidad de medida del producto
+            example: Unidad
+          moreDetails:
+            description: Información adicional del producto
+            type: array
+            items:
+              '$ref': '#/components/schemas/MoreDetailsDto'
+          taxes:
+            description: Impuestos sujetos al producto
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateTaxDto'
+        required:
+          - description
+          - quantity
+          - productId
+          - totalPrice
+          - unitPrice
+          - unitMeasure
+      CreateInvoiceDto:
+        type: object
+        properties:
+          document:
+            '$ref': '#/components/schemas/CreateDocumentDto'
+          invoice:
+            '$ref': '#/components/schemas/InvoiceDto'
+          payment:
+            description: Se define el Método de Pago a realizar en la Factura
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreatePaymentDto'
+          taxesInvoices:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateTaxInvoiceDto'
+          details:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateDetailDto'
+        required:
+          - document
+          - invoice
+          - payment
+          - taxesInvoices
+          - details
+      ReportDto:
+        type: object
+        properties:
+          email:
+            type: string
+            description: Se define el email donde llegará el link con el reporte generado para que pueda descargar
+            example: example@gmail.com
+          dateBefore:
+            format: YYYY-MM-DD
+            type: string
+            description: Se define la fecha desde cuando quiere generar el reporte
+            example: '2023-05-05'
+          dateAfter:
+            format: YYYY-MM-DD
+            type: string
+            description: Se define la fecha hasta cuando quiere generar el reporte
+            example: '2023-06-05'
+          documentCode:
+            type: string
+            description: Códgio del tipo de documento
+            example: '01'
+        required:
+        - email
+        - dateBefore
+        - dateAfter
+        - documentCode
+      WaybillDto:
+        type: object
+        properties:
+          reasonTransfer:
+            type: string
+            description: Se define el motivo de traslado
+            example: Entrega de Mercadería
+          singleCustomsDoc:
+            type: string
+            description: Documento Aduanero Único
+            example: '0041324846887'
+          codDestination:
+            type: string
+            description: 'Se define el código identificador del Establecimiento de Destino '
+            minLength: 3
+            maxLength: 3
+          route:
+            type: string
+            description: Se define la ruta del transporte
+            example: Quito-Machachi
+          initAddress:
+            type: string
+            description: Se define la dirección de origen para el transporte
+            example: Quito
+          startDate:
+            format: YYYY-MM-DD
+            type: string
+            description: Se define la fecha de inicio del transporte
+            example: '2023-05-12'
+          endDate:
+            format: YYYY-MM-DD
+            type: string
+            description: Se define la fecha de finalización del transporte
+            example: '2023-05-15'
+          carrierId:
+            type: number
+            description: Se define el Tranportista mediante su id.
+            example: 1
+        required:
+          - reasonTransfer
+          - initAddress
+          - startDate
+          - endDate
+          - carrierId
+      CreateWaybillDto:
+        type: object
+        properties:
+          document:
+            '$ref': '#/components/schemas/CreateDocumentDto'
+          waybill:
+            '$ref': '#/components/schemas/WaybillDto'
+          invoiceIds:
+            description:
+              Se define los Ids de las facturas para ligarlas a la Guia de
+              Remisión
+            example:
+              - 1
+              - 2
+              - 3
+            type: array
+            items:
+              type: number
+        required:
+          - document
+          - waybill
+          - invoiceIds
+      RetentionDto:
+        type: object
+        properties:
+          fiscalPeriod:
+            format: YYYY-MM
+            type: string
+            description: Se define el Mes y Año del periódo de vigencia del SRI
+            example: 2019-03
+          invoiceId:
+            type: number
+            description:
+              Se define el Id de la factura para ligarle al Comprobante de
+              Retención
+            example: 2
+          ivaRentCode:
+            type: number
+            description: Código del impuesto IVA para la Rentención basado en el SRI
+            example: 9
+          rentCode:
+            type: number
+            description: Código del impuesto Renta para la Rentención basado en el SRI
+            example: 303
+          isdRentCode:
+            type: number
+            description: Código del impuesto ISD para la Rentención basado en el SRI
+            example: 4580
+        required:
+          - fiscalPeriod
+          - invoiceId
+      CreateRetentionDto:
+        type: object
+        properties:
+          document:
+            '$ref': '#/components/schemas/CreateDocumentDto'
+          retention:
+            '$ref': '#/components/schemas/RetentionDto'
+        required:
+          - document
+          - retention
+      DebitNoteDto:
+        type: object
+        properties:
+          totalWithoutTax:
+            type: number
+            description: Valor total a pagar en la Nóta de Débito
+            example: '17.60'
+          amount:
+            type: number
+            description: Valor total a pagar en la Nóta de Débito
+            example: '20.00'
+          invoiceId:
+            type: number
+            description: Se define el Id de la factura para ligarle a la Nóta de Débito
+            example: 2
+        required:
+          - totalWithoutTax
+          - amount
+          - invoiceId
+      CreateTaxDebitNoteDto:
+        type: object
+        properties:
+          code:
+            type: string
+            description:
+              "Se define el tipo de impuesto.\n  - **2**: IVA \n  - **3**:
+              ICE\n  - **5**: IRBPNR"
+            example: '2'
+            minLength: 1
+            maxLength: 1
+          percentCode:
+            type: number
+            description: Se define el porcentaje del Impuesto mediante el SRI
+            example: '2'
+          taxBases:
+            type: number
+            description: Valor aplicarse el Impuesto
+            example: '169.99'
+          rate:
+            type: number
+            description: Tarifa del Impuesto aplicarse
+            example: '12'
+          value:
+            type: number
+            description: Valor del Impuesto
+            example: '20.39'
+        required:
+          - code
+          - percentCode
+          - taxBases
+          - rate
+          - value
+      CreateMotiveDto:
+        type: object
+        properties:
+          reason:
+            type: string
+            description: Se especifica el motivo o la razón de la Nota de Débito
+            example: Cobro de interes
+          value:
+            type: number
+            description: Se debine el valor de la Nota de Débito
+            example: '17.60'
+        required:
+          - reason
+          - value
+      CreateDebitNoteDto:
+        type: object
+        properties:
+          document:
+            '$ref': '#/components/schemas/CreateDocumentDto'
+          debitNote:
+            '$ref': '#/components/schemas/DebitNoteDto'
+          payments:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreatePaymentDto'
+          taxesDebit:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateTaxDebitNoteDto'
+          motives:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateMotiveDto'
+        required:
+          - document
+          - debitNote
+          - payments
+          - taxesDebit
+          - motives
+      CreditNoteDto:
+        type: object
+        properties:
+          rise:
+            type: string
+            description: Se define el RISE
+            example: Contribuyente Régimen Simplificado RISE
+          currency:
+            type: string
+            description: Se define la moneda de la Nota de Créditp
+            example: USD
+          reason:
+            type: string
+            description: Se define el motivo a realizarse la Nota de Crédito
+            example: Devolución de Mercadería
+          totalWithoutTax:
+            type: number
+            description: Valor sin Impuesto de la Nota de Crédito
+            example: '17.60'
+          modificationValue:
+            type: number
+            description: Valor total de la Nota de Crédito
+            example: '20.00'
+          invoiceId:
+            type: number
+            description: Se define el Id de la factura para ligarla a la Nota de Crédito
+            example: 1
+        required:
+          - rise
+          - reason
+          - totalWithoutTax
+          - modificationValue
+          - invoiceId
+      CreateTaxCreditNoteDto:
+        type: object
+        properties:
+          code:
+            type: string
+            description:
+              "Se define el tipo de impuesto.\n  - **2**: IVA \n  - **3**:
+              ICE\n  - **5**: IRBPNR"
+            example: '2'
+            minLength: 1
+            maxLength: 1
+          percentCode:
+            type: number
+            description: Se define el porcentaje del Impuesto mediante el SRI
+            example: '2'
+          taxBases:
+            type: number
+            description: Valor aplicarse el Impuesto
+            example: '169.99'
+          value:
+            type: number
+            description: Valor del Impuesto
+            example: '20.39'
+        required:
+          - code
+          - percentCode
+          - taxBases
+          - value
+      CreateCreditNoteDto:
+        type: object
+        properties:
+          document:
+            '$ref': '#/components/schemas/CreateDocumentDto'
+          creditNote:
+            '$ref': '#/components/schemas/CreditNoteDto'
+          taxesCredit:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateTaxCreditNoteDto'
+          details:
+            type: array
+            items:
+              '$ref': '#/components/schemas/CreateDetailDto'
+        required:
+          - document
+          - creditNote
+          - taxesCredit
+          - details
+    securitySchemes:
+      CookieAuth:   
+        type: apiKey
+        in: cookie
+        name: Set-Cookie
+      ApiKey:
+        description: >
+          La ApiKey es un identificador único que se utiliza para identificar 
+          y controlar el acceso a un servicio que ofrece una API.
+        type: apiKey
+        name: Authorization
+        in: header
+  

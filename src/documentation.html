@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <redoc spec-url="api-documentation.yaml"></redoc>
+</head>
+<body>
+    
+</body>
+
+<script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"> </script>
+<script src="node_modules/redoc/bundles/redoc.standalone.js"> </script>
+
+<script>
+    Redoc.init('api-documentation.yaml', {
+      scrollYOffset: 50
+    }, document.getElementById('redoc-container'))
+    </script>
+</html>
